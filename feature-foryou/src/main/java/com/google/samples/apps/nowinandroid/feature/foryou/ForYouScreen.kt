@@ -25,19 +25,16 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumedWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -142,14 +139,18 @@ fun ForYouScreen(
                     ),
                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                         containerColor = Color.Transparent
-                    ),
-                    modifier = Modifier.windowInsetsPadding(
-                        WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
                     )
                 )
             },
             containerColor = Color.Transparent
         ) { innerPadding ->
+            val resolvedPadding = PaddingValues(
+                top = innerPadding.calculateTopPadding(),
+                // Don't use bottom inset values provided to us here, we will handle those
+                // inside the grid
+                bottom = 0.dp,
+            )
+
             // Workaround to call Activity.reportFullyDrawn from Jetpack Compose.
             // This code should be called when the UI is ready for use
             // and relates to Time To Full Display.
@@ -182,8 +183,8 @@ fun ForYouScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalArrangement = Arrangement.spacedBy(24.dp),
                 modifier = modifier
-                    .padding(innerPadding)
-                    .consumedWindowInsets(innerPadding)
+                    .padding(resolvedPadding)
+                    .consumedWindowInsets(resolvedPadding)
                     .fillMaxSize()
                     .testTag("forYou:feed"),
                 state = lazyGridState

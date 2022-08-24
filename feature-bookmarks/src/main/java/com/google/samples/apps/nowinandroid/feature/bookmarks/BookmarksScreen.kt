@@ -21,14 +21,11 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumedWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells.Adaptive
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -87,14 +84,18 @@ fun BookmarksScreen(
                     ),
                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                         containerColor = Color.Transparent
-                    ),
-                    modifier = Modifier.windowInsetsPadding(
-                        WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
                     )
                 )
             },
             containerColor = Color.Transparent
         ) { innerPadding ->
+            val resolvedPadding = PaddingValues(
+                top = innerPadding.calculateTopPadding(),
+                // Don't use bottom inset values provided to us here, we will handle those
+                // inside the grid
+                bottom = 0.dp,
+            )
+
             LazyVerticalGrid(
                 columns = Adaptive(300.dp),
                 contentPadding = PaddingValues(16.dp),
@@ -103,8 +104,8 @@ fun BookmarksScreen(
                 modifier = modifier
                     .fillMaxSize()
                     .testTag("bookmarks:feed")
-                    .padding(innerPadding)
-                    .consumedWindowInsets(innerPadding)
+                    .padding(resolvedPadding)
+                    .consumedWindowInsets(resolvedPadding)
             ) {
                 newsFeed(
                     feedState = feedState,

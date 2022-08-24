@@ -17,31 +17,30 @@
 package com.google.samples.apps.nowinandroid.ui
 
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.consumedWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
 import com.google.samples.apps.nowinandroid.core.designsystem.component.NiaBackground
@@ -83,14 +82,29 @@ fun NiaApp(
                     }
                 }
             ) { padding ->
+                val verticalPadding = PaddingValues(
+                    // Don't use top inset values provided to us here, we will handle those
+                    // within each screen
+                    top = 0.dp,
+                    bottom = if (appState.shouldShowBottomBar) {
+                        padding.calculateBottomPadding()
+                    } else {
+                        // Don't use bottom inset values provided to us here, we will handle those
+                        // within each screen
+                        0.dp
+                    }
+                )
+
+                val horizontalPadding = PaddingValues(
+                    start = padding.calculateStartPadding(LocalLayoutDirection.current),
+                    end = padding.calculateEndPadding(LocalLayoutDirection.current),
+                )
+
                 Row(
                     Modifier
                         .fillMaxSize()
-                        .windowInsetsPadding(
-                            WindowInsets.safeDrawing.only(
-                                WindowInsetsSides.Horizontal
-                            )
-                        )
+                        .padding(horizontalPadding)
+                        .consumedWindowInsets(horizontalPadding)
                 ) {
                     if (appState.shouldShowNavRail) {
                         NiaNavRail(
@@ -106,8 +120,8 @@ fun NiaApp(
                         onBackClick = appState::onBackClick,
                         onNavigateToDestination = appState::navigate,
                         modifier = Modifier
-                            .padding(padding)
-                            .consumedWindowInsets(padding)
+                            .padding(verticalPadding)
+                            .consumedWindowInsets(verticalPadding)
                     )
                 }
             }
@@ -158,42 +172,32 @@ private fun NiaBottomBar(
     onNavigateToDestination: (TopLevelDestination) -> Unit,
     currentDestination: NavDestination?
 ) {
-    // Wrap the navigation bar in a surface so the color behind the system
-    // navigation is equal to the container color of the navigation bar.
-    Surface(color = MaterialTheme.colorScheme.surface) {
-        NiaNavigationBar(
-            modifier = Modifier.windowInsetsPadding(
-                WindowInsets.safeDrawing.only(
-                    WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom
-                )
+    NiaNavigationBar {
+        destinations.forEach { destination ->
+            val selected =
+                currentDestination?.hierarchy?.any { it.route == destination.route } == true
+            NiaNavigationBarItem(
+                selected = selected,
+                onClick = { onNavigateToDestination(destination) },
+                icon = {
+                    val icon = if (selected) {
+                        destination.selectedIcon
+                    } else {
+                        destination.unselectedIcon
+                    }
+                    when (icon) {
+                        is ImageVectorIcon -> Icon(
+                            imageVector = icon.imageVector,
+                            contentDescription = null
+                        )
+                        is DrawableResourceIcon -> Icon(
+                            painter = painterResource(id = icon.id),
+                            contentDescription = null
+                        )
+                    }
+                },
+                label = { Text(stringResource(destination.iconTextId)) }
             )
-        ) {
-            destinations.forEach { destination ->
-                val selected =
-                    currentDestination?.hierarchy?.any { it.route == destination.route } == true
-                NiaNavigationBarItem(
-                    selected = selected,
-                    onClick = { onNavigateToDestination(destination) },
-                    icon = {
-                        val icon = if (selected) {
-                            destination.selectedIcon
-                        } else {
-                            destination.unselectedIcon
-                        }
-                        when (icon) {
-                            is ImageVectorIcon -> Icon(
-                                imageVector = icon.imageVector,
-                                contentDescription = null
-                            )
-                            is DrawableResourceIcon -> Icon(
-                                painter = painterResource(id = icon.id),
-                                contentDescription = null
-                            )
-                        }
-                    },
-                    label = { Text(stringResource(destination.iconTextId)) }
-                )
-            }
         }
     }
 }
